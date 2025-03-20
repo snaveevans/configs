@@ -14,17 +14,15 @@ def get_directories(args: list[str]):
     return directories
 
 
-def select_directory(directories):
+def select_directory(fzf_path, directories):
     """Use fzf to select a directory."""
-    homebrew_prefix = "/opt/homebrew"
-    fzf_path = os.path.join(homebrew_prefix, "bin", "fzf")
     result = subprocess.run(
         [fzf_path], input="\n".join(directories), stdout=subprocess.PIPE, text=True
     )
     return result.stdout.strip()
 
 
-def select_open_tab():
+def select_open_tab(fzf_path):
     result = subprocess.run(["kitty", "@", "ls"], capture_output=True, text=True)
 
     # Parse the JSON output
@@ -35,8 +33,6 @@ def select_open_tab():
     for session in data:
         for tab in session["tabs"]:
             tabs.append(tab["title"])
-    homebrew_prefix = "/opt/homebrew"
-    fzf_path = os.path.join(homebrew_prefix, "bin", "fzf")
     result = subprocess.run(
         [fzf_path], input="\n".join(tabs), stdout=subprocess.PIPE, text=True
     )
@@ -45,7 +41,7 @@ def select_open_tab():
 
 
 def main(args: list[str]) -> dict[str, str]:
-    kitten_name, mode, *dirs = args
+    kitten_name, fzf_path, mode, *dirs = args
     # Get directories to choose from
     directories = get_directories(dirs)
 
@@ -56,13 +52,13 @@ def main(args: list[str]) -> dict[str, str]:
     # }
 
     if mode == "open":
-        return select_open_tab()
+        return select_open_tab(fzf_path)
 
     if not directories:
         return {"status": "error", "message": "No directories found."}
 
     # Let user select a directory using fzf
-    selected_directory = select_directory(directories)
+    selected_directory = select_directory(fzf_path, directories)
 
     if not selected_directory:
         return {"status": "error", "message": "no directory selected"}
